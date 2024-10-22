@@ -1,6 +1,8 @@
 import { useState } from 'react'
-import ShopForProgress from './components/ShopForProgress'
+import reactLogo from './assets/react.svg'
+import viteLogo from '/vite.svg'
 import './styles/globals.css'
+import ShopForProgress from './components/ShopForProgress.jsx'
 
 function App() {
   return (
