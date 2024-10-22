@@ -26,22 +26,27 @@ const CAMPAIGNS = [
   {
     name: 'Harris-Walz 2024',
     description: 'Support the presidential campaign',
-    website: 'https://example.com/harris-walz'
+    website: 'https://joebiden.com'
   },
   {
     name: 'Fair Fight',
     description: 'Fighting for free and fair elections',
-    website: 'https://example.com/fair-fight'
+    website: 'https://fairfight.com'
   },
   {
     name: 'Working Families Party',
     description: 'Building progressive political power',
-    website: 'https://example.com/wfp'
+    website: 'https://workingfamilies.org'
   },
   {
     name: 'Common Defense',
     description: 'Progressive veterans advocating for democracy',
-    website: 'https://example.com/common-defense'
+    website: 'https://commondefense.us'
+  },
+  {
+    name: 'Other',
+    description: 'Support another progressive campaign',
+    website: null
   }
 ];
 
@@ -51,6 +56,7 @@ function ShopForProgress() {
   const [purchaseAmount, setPurchaseAmount] = useState('');
   const [donationAmount, setDonationAmount] = useState(0);
   const [selectedCampaign, setSelectedCampaign] = useState('');
+  const [otherCampaignName, setOtherCampaignName] = useState('');
   const [showEncouragement, setShowEncouragement] = useState(false);
   
   // Totals and history
@@ -108,31 +114,36 @@ function ShopForProgress() {
   };
 
   const handleDonationConfirm = () => {
-    if (selectedCampaign) {
+    if ((selectedCampaign === 'Other' && otherCampaignName) || 
+        (selectedCampaign && selectedCampaign !== 'Other')) {
       setTotalDonations(prev => prev + donationAmount);
       setDonationHistory(prev => [...prev, {
         date: new Date().toISOString(),
         amount: donationAmount,
-        campaign: selectedCampaign,
+        campaign: selectedCampaign === 'Other' ? otherCampaignName : selectedCampaign,
         source: 'Regular flow'
       }]);
       setStep(STEPS.COMPLETE);
+      setOtherCampaignName('');
     }
   };
 
   // Manual entry handlers
   const handleManualDonation = () => {
     const amount = parseFloat(manualDonationAmount);
-    if (!isNaN(amount) && amount > 0 && manualDonationCampaign) {
+    if (!isNaN(amount) && amount > 0 && 
+        ((manualDonationCampaign === 'Other' && otherCampaignName) || 
+         (manualDonationCampaign && manualDonationCampaign !== 'Other'))) {
       setTotalDonations(prev => prev + amount);
       setDonationHistory(prev => [...prev, {
         date: new Date().toISOString(),
         amount,
-        campaign: manualDonationCampaign,
+        campaign: manualDonationCampaign === 'Other' ? otherCampaignName : manualDonationCampaign,
         source: 'Manual entry'
       }]);
       setManualDonationAmount('');
       setManualDonationCampaign('');
+      setOtherCampaignName('');
     }
   };
 
@@ -160,6 +171,7 @@ function ShopForProgress() {
     setPurchaseAmount('');
     setDonationAmount(0);
     setSelectedCampaign('');
+    setOtherCampaignName('');
   };
 
   const resetFlow = () => {
@@ -167,6 +179,7 @@ function ShopForProgress() {
     setPurchaseAmount('');
     setDonationAmount(0);
     setSelectedCampaign('');
+    setOtherCampaignName('');
   };
 
   const formatDate = (dateString) => {
@@ -251,20 +264,40 @@ return (
                 <p>Select a campaign to support:</p>
                 <div className="space-y-2">
                   {CAMPAIGNS.map(campaign => (
-                    <Button
-                      key={campaign.name}
-                      onClick={() => setSelectedCampaign(campaign.name)}
-                      variant={selectedCampaign === campaign.name ? "default" : "outline"}
-                      className="w-full text-left justify-start"
-                    >
-                      {campaign.name}
-                    </Button>
+                    <div key={campaign.name} className="space-y-2">
+                      <Button
+                        onClick={() => setSelectedCampaign(campaign.name)}
+                        variant={selectedCampaign === campaign.name ? "default" : "outline"}
+                        className="w-full text-left justify-start"
+                      >
+                        {campaign.name}
+                      </Button>
+                      {campaign.website && selectedCampaign === campaign.name && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full text-blue-600"
+                          onClick={() => window.open(campaign.website, '_blank')}
+                        >
+                          Visit Campaign Website
+                        </Button>
+                      )}
+                      {selectedCampaign === 'Other' && campaign.name === 'Other' && (
+                        <Input
+                          type="text"
+                          value={otherCampaignName}
+                          onChange={(e) => setOtherCampaignName(e.target.value)}
+                          placeholder="Enter campaign name"
+                          className="mt-2"
+                        />
+                      )}
+                    </div>
                   ))}
                 </div>
                 <Button
                   onClick={handleDonationConfirm}
                   className="w-full bg-blue-600 hover:bg-blue-700"
-                  disabled={!selectedCampaign}
+                  disabled={!selectedCampaign || (selectedCampaign === 'Other' && !otherCampaignName)}
                 >
                   Confirm Donation
                 </Button>
@@ -275,7 +308,7 @@ return (
               <div className="space-y-4">
                 <Alert className="bg-green-50 border-green-200">
                   <AlertDescription>
-                    Thank you for your donation of ${donationAmount.toFixed(2)} to {selectedCampaign}!
+                    Thank you for your donation of ${donationAmount.toFixed(2)} to {selectedCampaign === 'Other' ? otherCampaignName : selectedCampaign}!
                   </AlertDescription>
                 </Alert>
                 <Button onClick={resetFlow} className="w-full">
@@ -296,7 +329,7 @@ return (
 {/* Campaigns Tab */}
           <TabsContent value="campaigns" className="space-y-4">
             <div className="grid gap-4">
-              {CAMPAIGNS.map(campaign => (
+              {CAMPAIGNS.filter(campaign => campaign.name !== 'Other').map(campaign => (
                 <Card key={campaign.name}>
                   <CardHeader>
                     <CardTitle>{campaign.name}</CardTitle>
@@ -305,10 +338,10 @@ return (
                   <CardContent>
                     <Button
                       variant="outline"
-                      className="w-full"
+                      className="w-full text-blue-600"
                       onClick={() => window.open(campaign.website, '_blank')}
                     >
-                      Learn More
+                      Visit Campaign Website
                     </Button>
                   </CardContent>
                 </Card>
@@ -363,20 +396,42 @@ return (
                   />
                   <div className="space-y-2">
                     {CAMPAIGNS.map(campaign => (
-                      <Button
-                        key={campaign.name}
-                        onClick={() => setManualDonationCampaign(campaign.name)}
-                        variant={manualDonationCampaign === campaign.name ? "default" : "outline"}
-                        className="w-full text-left justify-start"
-                      >
-                        {campaign.name}
-                      </Button>
+                      <div key={campaign.name} className="space-y-2">
+                        <Button
+                          onClick={() => setManualDonationCampaign(campaign.name)}
+                          variant={manualDonationCampaign === campaign.name ? "default" : "outline"}
+                          className="w-full text-left justify-start"
+                        >
+                          {campaign.name}
+                        </Button>
+                        {campaign.website && manualDonationCampaign === campaign.name && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="w-full text-blue-600"
+                            onClick={() => window.open(campaign.website, '_blank')}
+                          >
+                            Visit Campaign Website
+                          </Button>
+                        )}
+                        {manualDonationCampaign === 'Other' && campaign.name === 'Other' && (
+                          <Input
+                            type="text"
+                            value={otherCampaignName}
+                            onChange={(e) => setOtherCampaignName(e.target.value)}
+                            placeholder="Enter campaign name"
+                            className="mt-2"
+                          />
+                        )}
+                      </div>
                     ))}
                   </div>
                   <Button 
                     onClick={handleManualDonation}
                     className="w-full"
-                    disabled={!manualDonationAmount || !manualDonationCampaign || parseFloat(manualDonationAmount) <= 0}
+                    disabled={!manualDonationAmount || !manualDonationCampaign || 
+                             (manualDonationCampaign === 'Other' && !otherCampaignName) || 
+                             parseFloat(manualDonationAmount) <= 0}
                   >
                     Add Donation
                   </Button>
